@@ -1,0 +1,860 @@
+openapi: 3.0.3
+info:
+  title: Fooder - RFID Door Control System
+  description: |
+    REST API für ein RFID-gesteuertes Tür-Zugangssystem.
+    
+    Das System verwaltet:
+    - **Entities**: Registrierte Haustiere/Benutzer mit RFID-Tags
+    - **Door Settings**: Konfiguration der Servo-gesteuerten Türen
+    - **Access Logs**: Protokollierung aller Zugriffe
+    - **Pending RFIDs**: Unbekannte RFID-Tags zur Registrierung
+    - **System Settings**: Globale Einstellungen
+  version: 1.0.0
+  contact:
+    name: Fooder Support
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+
+tags:
+  - name: entities
+    description: Entity-Verwaltung (Haustiere/Benutzer mit RFID-Tags)
+  - name: settings
+    description: Tür-Einstellungen (Servo-Konfiguration)
+  - name: logs
+    description: Zugriffsprotokolle
+  - name: pending-rfids
+    description: Unbekannte RFID-Tags
+  - name: system-settings
+    description: Globale System-Einstellungen
+
+paths:
+  /entities:
+    get:
+      tags:
+        - entities
+      summary: Alle Entities abrufen
+      description: Gibt alle registrierten Entities zurück
+      operationId: getEntities
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entity'
+    post:
+      tags:
+        - entities
+      summary: Neue Entity erstellen
+      description: Erstellt eine neue Entity
+      operationId: createEntity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreate'
+      responses:
+        '201':
+          description: Entity erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '400':
+          description: Validierungsfehler oder RFID-ID existiert bereits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /entities/{entity_id}:
+    get:
+      tags:
+        - entities
+      summary: Entity anhand ID abrufen
+      description: Gibt eine einzelne Entity anhand der ID zurück
+      operationId: getEntity
+      parameters:
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID der Entity
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '404':
+          description: Entity nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+    put:
+      tags:
+        - entities
+      summary: Entity aktualisieren
+      description: Aktualisiert eine existierende Entity
+      operationId: updateEntity
+      parameters:
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID der Entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreate'
+      responses:
+        '200':
+          description: Entity erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '404':
+          description: Entity nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '400':
+          description: Validierungsfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+    delete:
+      tags:
+        - entities
+      summary: Entity löschen
+      description: Löscht eine Entity
+      operationId: deleteEntity
+      parameters:
+        - name: entity_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID der Entity
+      responses:
+        '200':
+          description: Entity erfolgreich gelöscht
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Entity 1 erfolgreich gelöscht"
+        '404':
+          description: Entity nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /settings:
+    get:
+      tags:
+        - settings
+      summary: Alle Settings abrufen
+      description: Gibt alle Tür-Settings zurück
+      operationId: getSettings
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoorSetting'
+    post:
+      tags:
+        - settings
+      summary: Neues Setting erstellen
+      description: Erstellt ein neues Tür-Setting
+      operationId: createSetting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoorSettingCreate'
+      responses:
+        '201':
+          description: Setting erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoorSetting'
+        '400':
+          description: Validierungsfehler oder Tür-Name existiert bereits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /settings/{setting_id}:
+    get:
+      tags:
+        - settings
+      summary: Setting anhand ID abrufen
+      description: Gibt ein einzelnes Setting anhand der ID zurück
+      operationId: getSetting
+      parameters:
+        - name: setting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des Settings
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoorSetting'
+        '404':
+          description: Setting nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+    put:
+      tags:
+        - settings
+      summary: Setting aktualisieren
+      description: Aktualisiert ein existierendes Setting
+      operationId: updateSetting
+      parameters:
+        - name: setting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des Settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoorSettingCreate'
+      responses:
+        '200':
+          description: Setting erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoorSetting'
+        '404':
+          description: Setting nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '400':
+          description: Validierungsfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+    delete:
+      tags:
+        - settings
+      summary: Setting löschen
+      description: Löscht ein Setting
+      operationId: deleteSetting
+      parameters:
+        - name: setting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des Settings
+      responses:
+        '200':
+          description: Setting erfolgreich gelöscht
+        '404':
+          description: Setting nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /logs:
+    get:
+      tags:
+        - logs
+      summary: Alle Logs abrufen
+      description: Gibt Zugriffslogs zurück (neueste zuerst)
+      operationId: getLogs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+          description: Maximale Anzahl Einträge
+        - name: entity_id
+          in: query
+          schema:
+            type: integer
+          description: Filter nach Entity-ID
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Filter nach Aktion (z.B. 'granted', 'unknown')
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccessLog'
+    post:
+      tags:
+        - logs
+      summary: Neuen Log erstellen
+      description: Erstellt einen neuen Log-Eintrag
+      operationId: createLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessLogCreate'
+      responses:
+        '201':
+          description: Log erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLog'
+
+  /logs/{log_id}:
+    get:
+      tags:
+        - logs
+      summary: Log anhand ID abrufen
+      description: Gibt einen einzelnen Log-Eintrag anhand der ID zurück
+      operationId: getLog
+      parameters:
+        - name: log_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des Logs
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessLog'
+        '404':
+          description: Log nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /pending-rfids:
+    get:
+      tags:
+        - pending-rfids
+      summary: Alle unbekannten RFIDs abrufen
+      description: |
+        Gibt alle unbekannten/nicht-registrierten RFID-Tags zurück.
+        Diese Tags wurden gescannt, sind aber noch nicht als Entity registriert.
+      operationId: getPendingRfids
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximale Anzahl Einträge
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingRFID'
+    post:
+      tags:
+        - pending-rfids
+      summary: RFID manuell als 'pending' markieren
+      description: |
+        Markiert einen RFID-Tag manuell als "pending" (unbekannt).
+        Normalerweise erfolgt dies automatisch beim Scannen.
+      operationId: createPendingRfid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PendingRFIDCreate'
+      responses:
+        '201':
+          description: PendingRFID erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingRFID'
+
+  /pending-rfids/{pending_id}:
+    get:
+      tags:
+        - pending-rfids
+      summary: PendingRFID anhand ID abrufen
+      description: Gibt einen einzelnen PendingRFID anhand der ID zurück
+      operationId: getPendingRfid
+      parameters:
+        - name: pending_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des PendingRFID
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingRFID'
+        '404':
+          description: PendingRFID nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /pending-rfids/{pending_id}/convert:
+    post:
+      tags:
+        - pending-rfids
+      summary: PendingRFID zu Entity konvertieren
+      description: |
+        Konvertiert einen PendingRFID zu einer vollständigen Entity.
+        Die RFID-ID aus dem Entity muss mit der des PendingRFID übereinstimmen.
+        Nach erfolgreicher Konvertierung wird der PendingRFID gelöscht.
+      operationId: convertPendingToEntity
+      parameters:
+        - name: pending_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID des PendingRFID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreate'
+      responses:
+        '200':
+          description: Erfolgreich zu Entity konvertiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '404':
+          description: PendingRFID nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '400':
+          description: RFID-ID Mismatch oder bereits registriert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /system-settings:
+    get:
+      tags:
+        - system-settings
+      summary: System-Einstellungen abrufen
+      description: |
+        Gibt die globalen System-Einstellungen zurück.
+        Enthält u.a. pending_door_values: Standard-Türwerte für unbekannte RFIDs
+      operationId: getSystemSettings
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettings'
+    put:
+      tags:
+        - system-settings
+      summary: System-Einstellungen aktualisieren
+      description: |
+        Aktualisiert die globalen System-Einstellungen.
+        Alle Felder sind optional - nur angegebene Felder werden aktualisiert.
+      operationId: updateSystemSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemSettingsUpdate'
+      responses:
+        '200':
+          description: Einstellungen erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettings'
+        '400':
+          description: Validierungsfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+components:
+  schemas:
+    Entity:
+      type: object
+      required:
+        - id
+        - rfid_id
+        - identifier
+        - door_values
+      properties:
+        id:
+          type: integer
+          description: Eindeutige ID der Entity
+          example: 1
+        rfid_id:
+          type: string
+          maxLength: 64
+          description: RFID-Tag-Nummer
+          example: "123456789"
+        identifier:
+          type: string
+          maxLength: 255
+          description: Name/Bezeichnung des Haustiers
+          example: "Fluffy"
+        door_values:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: |
+            Türöffnungszeiten in Sekunden.
+            Key=door_name, Value=Sekunden (0.0 = Tür bleibt geschlossen)
+          example:
+            door_1: 5.0
+            door_2: 0.0
+
+    EntityCreate:
+      type: object
+      required:
+        - rfid_id
+        - identifier
+      properties:
+        rfid_id:
+          type: string
+          maxLength: 64
+          description: RFID-Tag-Nummer
+          example: "123456789"
+        identifier:
+          type: string
+          maxLength: 255
+          description: Name/Bezeichnung des Haustiers
+          example: "Fluffy"
+        door_values:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+          description: |
+            Türöffnungszeiten in Sekunden.
+            Key=door_name, Value=Sekunden (0.0 = Tür bleibt geschlossen)
+          example:
+            door_1: 5.0
+            door_2: 0.0
+          default: {}
+
+    DoorSetting:
+      type: object
+      required:
+        - id
+        - door_name
+        - servo_pin
+        - min_angle
+        - max_angle
+        - min_pulse
+        - max_pulse
+      properties:
+        id:
+          type: integer
+          description: Eindeutige ID des Settings
+          example: 1
+        door_name:
+          type: string
+          maxLength: 50
+          description: Name der Tür
+          example: "door_1"
+        servo_pin:
+          type: integer
+          description: GPIO-Pin-Nummer des Servos
+          example: 17
+        min_angle:
+          type: number
+          format: float
+          description: Minimaler Servo-Winkel in Grad
+          example: -90
+        max_angle:
+          type: number
+          format: float
+          description: Maximaler Servo-Winkel in Grad
+          example: 90
+        min_pulse:
+          type: number
+          format: float
+          description: Minimale PWM-Pulsbreite in Sekunden
+          example: 0.0005
+        max_pulse:
+          type: number
+          format: float
+          description: Maximale PWM-Pulsbreite in Sekunden
+          example: 0.0025
+
+    DoorSettingCreate:
+      type: object
+      required:
+        - door_name
+        - servo_pin
+        - min_angle
+        - max_angle
+      properties:
+        door_name:
+          type: string
+          maxLength: 50
+          description: Name der Tür
+          example: "door_1"
+        servo_pin:
+          type: integer
+          description: GPIO-Pin-Nummer des Servos
+          example: 17
+        min_angle:
+          type: number
+          format: float
+          description: Minimaler Servo-Winkel in Grad
+          example: -90
+        max_angle:
+          type: number
+          format: float
+          description: Maximaler Servo-Winkel in Grad
+          example: 90
+        min_pulse:
+          type: number
+          format: float
+          description: Minimale PWM-Pulsbreite in Sekunden
+          example: 0.0005
+          default: 0.0005
+        max_pulse:
+          type: number
+          format: float
+          description: Maximale PWM-Pulsbreite in Sekunden
+          example: 0.0025
+          default: 0.0025
+
+    AccessLog:
+      type: object
+      required:
+        - id
+        - action
+        - timestamp
+      properties:
+        id:
+          type: integer
+          description: Eindeutige ID des Logs
+          example: 1
+        entity_id:
+          type: integer
+          nullable: true
+          description: Verknüpfte Entity-ID (null bei unbekanntem RFID)
+          example: 1
+        rfid_id:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: RFID-Nummer (wichtig bei unbekannten Tags)
+          example: "123456789"
+        action:
+          type: string
+          maxLength: 50
+          description: Art des Zugriffs
+          example: "granted"
+        timestamp:
+          type: string
+          format: date-time
+          description: Zeitstempel des Zugriffs
+          example: "2025-12-14T10:30:00Z"
+
+    AccessLogCreate:
+      type: object
+      required:
+        - action
+      properties:
+        entity_id:
+          type: integer
+          nullable: true
+          description: Verknüpfte Entity-ID (null bei unbekanntem RFID)
+          example: 1
+        rfid_id:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: RFID-Nummer (optional, wichtig bei unbekannten Tags)
+          example: "123456789"
+        action:
+          type: string
+          maxLength: 50
+          description: Art des Zugriffs
+          example: "granted"
+
+    PendingRFID:
+      type: object
+      required:
+        - id
+        - rfid_id
+        - first_seen
+        - last_seen
+        - scan_count
+      properties:
+        id:
+          type: integer
+          description: Eindeutige ID
+          example: 1
+        rfid_id:
+          type: string
+          maxLength: 64
+          description: RFID-Tag-Nummer
+          example: "987654321"
+        first_seen:
+          type: string
+          format: date-time
+          description: Erster Scan-Zeitstempel
+          example: "2025-12-14T10:00:00Z"
+        last_seen:
+          type: string
+          format: date-time
+          description: Letzter Scan-Zeitstempel
+          example: "2025-12-14T10:30:00Z"
+        scan_count:
+          type: integer
+          description: Anzahl der Scans
+          example: 5
+
+    PendingRFIDCreate:
+      type: object
+      required:
+        - rfid_id
+      properties:
+        rfid_id:
+          type: string
+          maxLength: 64
+          description: RFID-Tag-Nummer
+          example: "987654321"
+
+    SystemSettings:
+      type: object
+      required:
+        - id
+        - pending_door_values
+      properties:
+        id:
+          type: integer
+          description: Eindeutige ID (normalerweise 1)
+          example: 1
+        pending_door_values:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+          description: |
+            Standard-Türwerte für unbekannte RFIDs in Sekunden.
+            Key=door_name, Value=Sekunden
+          example:
+            door_1: 3.0
+            door_2: 0.0
+        settings_json:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Weitere System-Einstellungen (JSON)
+          example:
+            debug_mode: false
+            notification_enabled: true
+
+    SystemSettingsUpdate:
+      type: object
+      properties:
+        pending_door_values:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+          nullable: true
+          description: |
+            Standard-Türwerte für unbekannte RFIDs in Sekunden.
+            Key=door_name, Value=Sekunden
+          example:
+            door_1: 3.0
+            door_2: 0.0
+        settings_json:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Weitere System-Einstellungen (JSON)
+          example:
+            debug_mode: false
+
+    HTTPError:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Fehlerbeschreibung
+          example: "Entity mit ID 1 nicht gefunden"
+

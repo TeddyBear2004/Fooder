@@ -135,26 +135,10 @@ def main_loop():
     door_settings = fetch_door_settings()
 
     if not door_settings:
-        LOGGER.warning("Could not load door settings from API. Using SAFE defaults.")
-        # FIX: Sichere Defaults, die nichts kaputt machen (0 Grad)
-        door_settings = {
-            "door_1": {
-                "door_name": "door_1",
-                "servo_pin": 17,
-                "min_angle": 0,  # War -90 -> Gefahr!
-                "max_angle": 0,  # War 90
-                "min_pulse": 0.0005,
-                "max_pulse": 0.0025
-            },
-            "door_2": {
-                "door_name": "door_2",
-                "servo_pin": 18,
-                "min_angle": 0,
-                "max_angle": 0,
-                "min_pulse": 0.0005,
-                "max_pulse": 0.0025
-            }
-        }
+        LOGGER.warning("Could not load door settings from API. Retry in 3s...")
+        sleep(3)
+        main_loop()
+        return
 
     servos = {}
     for door_name, cfg in door_settings.items():
